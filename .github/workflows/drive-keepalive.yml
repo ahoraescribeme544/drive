@@ -1,0 +1,27 @@
+# 드라이브가 쓰는 Supabase 무료 프로젝트가 오래 안 쓰여 일시 정지되지 않도록 하루 세 번 신호를 보냄
+name: drive-keepalive
+
+on:
+  schedule:
+    - cron: '23 */8 * * *'
+  workflow_dispatch:
+
+permissions:
+  actions: write
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Supabase에 신호 보내기
+        run: |
+          curl -fsS --retry 3 --retry-delay 20 -X POST \
+            "https://mawbnuvsgnrtwkiwhmhe.supabase.co/rest/v1/rpc/drive_ping" \
+            -H "apikey: sb_publishable_s2Amucj2KFa0r8TMlQLGWQ_F9cXhiYi" \
+            -H "Content-Type: application/json" \
+            -d '{}'
+      - name: 예약 실행이 60일 뒤 멈추지 않게 유지
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X PUT "repos/${{ github.repository }}/actions/workflows/drive-keepalive.yml/enable" || true
